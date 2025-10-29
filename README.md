@@ -37,9 +37,9 @@ DeepSeek Voice Assistant - это Telegram бот, который:
 ### Предварительные требования
 
    ```bash
-python --version
-git --version
-ffmpeg -version
+python - 3.14 version
+git - 2.51.1 version
+ffmpeg - 8.0 version
 
 # Копируем проект на ваш компьютер
 git clone https://github.com/NailGusmanov/deepseek_voice_assistant.git
@@ -92,11 +92,9 @@ deepseek_voice_assistant/
 └── README.md               # Эта инструкция
 
 # Как работает бот
-Пользователь → Голосовое сообщение → Telegram → Наш сервер
-     ↓
-Распознавание речи (Whisper) → Текст запроса → DeepSeek API
-     ↓
-Текстовый ответ ← Формирование ответа ← Обработка AI
+Пользователь → Голосовое сообщение → Telegram → Наш сервер →
+
+Распознавание речи → Текст запроса → DeepSeek API → Текстовый ответ
 
 # Частые проблемы
 1. "ModuleNotFoundError"
