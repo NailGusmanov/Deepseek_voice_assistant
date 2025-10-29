@@ -1,21 +1,40 @@
-# Deepseek_voice_assistant
-Telegram бот для общения с AI через голосовые сообщения.
+# DeepSeek Voice Assistant
 
-## Возможности
--  Прием голосовых сообщений
--  Интеграция с DeepSeek AI
--  Текстовые ответы
--  Работает 24/7
+<div align="center">
 
-## Технологии
-- Python 3.14
-- python_telegram_bot
-- OpenAI Whisper
-- DeepSeek API
-- VS Code
+*Голосовой ассистент для Telegram на основе DeepSeek AI*
 
-## Установка
-```bash
-git clone https://github.com/NailGusmanov/Deepseek_voice_assistant.git
-cd Deepseek_voice_assistant
-pip install -r requirements.txt
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue)](https://core.telegram.org/bots)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+</div>
+
+## Что это за проект?
+
+DeepSeek Voice Assistant - это Telegram бот, который:
+- Принимает голосовые сообщения от пользователей
+- Преобразует речь в текст с помощью Whisper AI
+- Обрабатывает запросы через DeepSeek API
+- Отвечает текстовыми сообщениями
+
+## Технологии которые используются
+
+### Основные технологии:
+- Python 3.8+ - основной язык программирования (протестировано на Python 3.14)
+- python_telegram_bot - библиотека для работы с Telegram API
+- OpenAI Whisper - бесплатная модель для распознавания речи
+- DeepSeek API - искусственный интеллект для обработки запросов
+- FFmpeg - инструмент для обработки аудиофайлов
+
+### Вспомогательные библиотеки:
+- python-dotenv - для управления настройками
+- requests - для отправки HTTP запросов
+- logging - для ведения логов работы бота
+
+## Установка и настройка
+
+### Предварительные требования
+
+   ```bash
+   python --version
