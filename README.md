@@ -4,7 +4,7 @@
 
 *Голосовой ассистент для Telegram на основе DeepSeek AI*
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/python-3.14%2B-blue)](https://www.python.org/)
 [![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue)](https://core.telegram.org/bots)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -21,7 +21,7 @@ DeepSeek Voice Assistant - это Telegram бот, который:
 ## Технологии которые используются
 
 ### Основные технологии:
-- Python 3.8+ - основной язык программирования (протестировано на Python 3.14)
+- Python 3.14 - основной язык программирования (протестировано на Python 3.14)
 - python_telegram_bot - библиотека для работы с Telegram API
 - OpenAI Whisper - бесплатная модель для распознавания речи
 - DeepSeek API - искусственный интеллект для обработки запросов
