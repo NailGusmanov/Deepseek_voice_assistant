@@ -1,6 +1,8 @@
 import os
 import logging
 import requests
+import subprocess
+import tempfile
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
@@ -64,12 +66,13 @@ class DeepSeekVoiceAssistant:
             await update.message.reply_text("❌ Произошла ошибка при обработке запроса")
     
     async def import subprocess
-import tempfile
-import os
 
-async def handle_voice_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def  handle_voice_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка голосовых сообщений с использованием FFmpeg"""
     try:
+        # Уведомляем пользователя о начале обработки
+        await update.message.reply_text("🎤 Обрабатываю голосовое сообщение...")
+        
         # Скачиваем голосовое сообщение
         voice_file = await update.message.voice.get_file()
         
@@ -83,21 +86,47 @@ async def handle_voice_message(self, update: Update, context: ContextTypes.DEFAU
         # Скачиваем файл
         await voice_file.download_to_drive(oga_path)
         
-        # Конвертируем в WAV через FFmpeg
+        # Конвертируем в WAV через FFmpeg (используем полный путь)
+        ffmpeg_path = r"C:\Users\user\Desktop\ffmpeg\bin\ffmpeg.exe"
         command = [
-            'ffmpeg', '-i', oga_path, 
+            ffmpeg_path, 
+            '-i', oga_path, 
             '-acodec', 'pcm_s16le', 
             '-ac', '1', 
             '-ar', '16000', 
             wav_path,
-            '-y'  # Перезаписать если файл существует
+            '-y'
         ]
         
         # Запускаем FFmpeg
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=30)
         
         if result.returncode != 0:
             raise Exception(f"FFmpeg error: {result.stderr}")
+        
+        # Проверяем что файл создан
+        if not os.path.exists(wav_path):
+            raise Exception("Конвертированный файл не создан")
+        
+        # Пока временный ответ (Whisper добавим позже)
+        text = "[РАСПОЗНАННЫЙ ТЕКСТ] Голосовое сообщение успешно обработано! Распознавание текста скоро будет добавлено."
+        
+        # Получаем ответ от DeepSeek
+        response = await self._get_deepseek_response(text)
+        await update.message.reply_text(f"🎤 Распознано: {text}\n\n Ответ: {response}")
+        
+    except Exception as e:
+        logger.error(f"Ошибка обработки голосового сообщения: {e}")
+        await update.message.reply_text("❌ Ошибка обработки голосового сообщения")
+    
+    finally:
+        # Удаляем временные файлы
+        for file_path in [oga_path, wav_path]:
+            if os.path.exists(file_path):
+                try:
+                    os.unlink(file_path)
+                except:
+                    pass
         
         # Здесь будет распознавание через Whisper
         # text = whisper_model.transcribe(wav_path)["text"]
