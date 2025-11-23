@@ -67,8 +67,11 @@ class DeepSeekVoiceAssistant:
     
     async def import subprocess
 
-async def  handle_voice_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_voice_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка голосовых сообщений с использованием FFmpeg"""
+    oga_path = None
+    wav_path = None
+    
     try:
         # Уведомляем пользователя о начале обработки
         await update.message.reply_text("🎤 Обрабатываю голосовое сообщение...")
@@ -108,12 +111,12 @@ async def  handle_voice_message(self, update: Update, context: ContextTypes.DEFA
         if not os.path.exists(wav_path):
             raise Exception("Конвертированный файл не создан")
         
-        # Пока временный ответ (Whisper добавим позже)
-        text = "[РАСПОЗНАННЫЙ ТЕКСТ] Голосовое сообщение успешно обработано! Распознавание текста скоро будет добавлено."
+        # ВРЕМЕННЫЙ ОТВЕТ (потом заменим на Whisper)
+        text = "Голосовое сообщение успешно обработано! Распознавание текста скоро будет добавлено."
         
-        # Получаем ответ от DeepSeek
+        # Получаем ответ
         response = await self._get_deepseek_response(text)
-        await update.message.reply_text(f"🎤 Распознано: {text}\n\n Ответ: {response}")
+        await update.message.reply_text(f"🎤 {text}\n\n🤖 {response}")
         
     except Exception as e:
         logger.error(f"Ошибка обработки голосового сообщения: {e}")
@@ -122,27 +125,11 @@ async def  handle_voice_message(self, update: Update, context: ContextTypes.DEFA
     finally:
         # Удаляем временные файлы
         for file_path in [oga_path, wav_path]:
-            if os.path.exists(file_path):
+            if file_path and os.path.exists(file_path):
                 try:
                     os.unlink(file_path)
                 except:
                     pass
-        
-        # Здесь будет распознавание через Whisper
-        # text = whisper_model.transcribe(wav_path)["text"]
-        
-        # Временный ответ
-        await update.message.reply_text("🎤 Голосовое сообщение получено! Распознавание скоро будет добавлено.")
-        
-    except Exception as e:
-        logger.error(f"Ошибка обработки голосового сообщения: {e}")
-        await update.message.reply_text("❌ Ошибка обработки голосового сообщения")
-    
-    finally:
-        # Удаляем временные файлы
-        for file_path in [oga_path, wav_path]:
-            if os.path.exists(file_path):
-                os.unlink(file_path)
     
    async def _get_deepseek_response(self, message: str) -> str:
     """Запрос к DeepSeek API с отладкой"""
