@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -17,156 +17,196 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class DeepSeekVoiceAssistant:
-    def __init__(self):
-        # Загрузка конфигурации
-        self.token = os.getenv('TELEGRAM_BOT_TOKEN')
-        self.deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
-        self.model = os.getenv('DEEPSEEK_MODEL', 'deepseek-chat')
-        
-        # Проверка обязательных переменных
-        if not self.token or not self.deepseek_api_key:
-            logger.error("Не найдены TELEGRAM_BOT_TOKEN или DEEPSEEK_API_KEY")
-            raise ValueError("Проверьте настройки в .env файле")
-        
-        # Инициализация Telegram бота
-        self.application = Application.builder().token(self.token).build()
-        
-        # Настройка обработчиков
-        self._setup_handlers()
-    
-    def _setup_handlers(self):
-        """Настройка обработчиков сообщений"""
-        # Обработчик текстовых сообщений
-        self.application.add_handler(
-            MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_text_message)
-        )
-        
-        # Обработчик голосовых сообщений (пока заглушка)
-        self.application.add_handler(
-            MessageHandler(filters.VOICE, self.handle_voice_message)
-        )
-    
-    async def handle_text_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Обработка текстовых сообщений"""
-        user_message = update.message.text
-        user_id = update.message.from_user.id
-        
-        logger.info(f"Текст от пользователя {user_id}: {user_message}")
-        
-        try:
-            # Получаем ответ от DeepSeek
-            response = await self._get_deepseek_response(user_message)
-            
-            # Отправляем ответ пользователю
-            await update.message.reply_text(response)
-            
-        except Exception as e:
-            logger.error(f"Ошибка обработки сообщения: {e}")
-            await update.message.reply_text("❌ Произошла ошибка при обработке запроса")
-    
-    async def import subprocess
+# Глобальные переменные
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 
-async def handle_voice_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка голосовых сообщений с использованием FFmpeg"""
-    oga_path = None
-    wav_path = None
+if not TOKEN or not DEEPSEEK_API_KEY:
+    raise ValueError("Проверьте TELEGRAM_BOT_TOKEN и DEEPSEEK_API_KEY в .env файле")
+
+# Создаем приложение
+application = Application.builder().token(TOKEN).build()
+
+# Функции для ответов
+def get_fallback_response(message: str) -> str:
+    """Умные ответы когда AI недоступен"""
+    message_lower = message.lower()
+    
+    if any(word in message_lower for word in ['привет', 'здравств', 'hello', 'hi']):
+        return "Привет! 👋 Я голосовой ассистент. AI сервис временно недоступен!"
+    elif any(word in message_lower for word in ['как дела', 'как ты']):
+        return "Всё отлично! 🚀 Работаю над интеграцией AI."
+    elif '?' in message:
+        return "🤔 Интересный вопрос! Пока AI сервис настраивается."
+    else:
+        return "Сообщение получено! 📝 Я голосовой ассистент."
+
+async def get_deepseek_response(message: str) -> str:
+    """Запрос к DeepSeek API"""
+    try:
+        url = "https://api.deepseek.com/v1/chat/completions"
+        headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
+        data = {"model": "deepseek-chat", "messages": [{"role": "user", "content": message}]}
+        
+        response = requests.post(url, json=data, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return get_fallback_response(message)
+            
+    except Exception as e:
+        logger.error(f"Ошибка AI API: {e}")
+        return get_fallback_response(message)
+
+async def handle_all_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик ВСЕХ входящих сообщений для отладки"""
+    print(f"🔥 ВХОДЯЩЕЕ СООБЩЕНИЕ:")
+    print(f"🔥 User: {update.effective_user.id}")
+    
+    # Правильный способ определения типа сообщения
+    if update.message.text:
+        print(f"🔥 Тип: text")
+        print(f"🔥 Текст: {update.message.text}")
+    elif update.message.voice:
+        print(f"🔥 Тип: voice")
+        print(f"🔥 Голосовое: {update.message.voice.duration} сек")
+    elif update.message.audio:
+        print(f"🔥 Тип: audio") 
+        print(f"🔥 Аудио: {update.message.audio.duration} сек")
+    elif update.message.document:
+        print(f"🔥 Тип: document")
+    elif update.message.photo:
+        print(f"🔥 Тип: photo")
+    elif update.message.video:
+        print(f"🔥 Тип: video")
+    else:
+        print(f"🔥 Тип: unknown")
+    
+    print("---")
+
+# Обработчики команд
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"🎯 Команда /start от {update.effective_user.id}")
+    await update.message.reply_text(
+        "🤖 **DeepSeek Voice Assistant**\n\n"
+        "Привет! Я твой голосовой ассистент.\n\n"
+        "Отправь мне текстовое сообщение! 🚀",
+        parse_mode='Markdown'
+    )
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"🎯 Команда /help от {update.effective_user.id}")
+    await update.message.reply_text(
+        "ℹ️ **Помощь**\n\n"
+        "• /start - начать работу\n"
+        "• /help - эта справка\n"
+        "• Текст - AI ответ\n"
+        "• Голос - скоро будет!",
+        parse_mode='Markdown'
+    )
+
+# Обработчик текстовых сообщений
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text
+    user_id = update.effective_user.id
+    print(f"📝 Текст от {user_id}: {user_message}")
     
     try:
-        # Уведомляем пользователя о начале обработки
-        await update.message.reply_text("🎤 Обрабатываю голосовое сообщение...")
+        response = await get_deepseek_response(user_message)
+        await update.message.reply_text(response)
+    except Exception as e:
+        logger.error(f"Ошибка: {e}")
+        await update.message.reply_text("❌ Ошибка обработки")
+
+# Обработчик голосовых сообщений
+async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка голосовых сообщений с отладкой"""
+    user_id = update.effective_user.id
+    print(f"🔥 ГОЛОС: Получено голосовое сообщение от {user_id}")
+    
+    try:
+        print("🔥 ГОЛОС: Начинаю обработку...")
         
-        # Скачиваем голосовое сообщение
-        voice_file = await update.message.voice.get_file()
+        # Проверяем что это действительно голосовое сообщение
+        if not update.message.voice:
+            print("❌ ГОЛОС: Это не голосовое сообщение!")
+            await update.message.reply_text("❌ Это не голосовое сообщение")
+            return
+            
+        print(f"🔥 ГОЛОС: Длительность: {update.message.voice.duration} сек")
+        print(f"🔥 ГОЛОС: Размер файла: {update.message.voice.file_size} байт")
         
-        # Создаем временные файлы
-        with tempfile.NamedTemporaryFile(suffix='.oga', delete=False) as oga_file:
-            oga_path = oga_file.name
+        # Отправляем подтверждение
+        await update.message.reply_text("🎤 Получил голосовое сообщение! Обрабатываю...")
         
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as wav_file:
-            wav_path = wav_file.name
+        # Тестовый ответ
+        response = await get_deepseek_response("Пользователь отправил голосовое сообщение. Ответь что ты его получил и скоро сможешь распознавать речь.")
+        await update.message.reply_text(f"🤖 {response}")
         
-        # Скачиваем файл
-        await voice_file.download_to_drive(oga_path)
-        
-        # Конвертируем в WAV через FFmpeg (используем полный путь)
-        ffmpeg_path = r"C:\Users\user\Desktop\ffmpeg\bin\ffmpeg.exe"
-        command = [
-            ffmpeg_path, 
-            '-i', oga_path, 
-            '-acodec', 'pcm_s16le', 
-            '-ac', '1', 
-            '-ar', '16000', 
-            wav_path,
-            '-y'
-        ]
-        
-        # Запускаем FFmpeg
-        result = subprocess.run(command, capture_output=True, text=True, timeout=30)
-        
-        if result.returncode != 0:
-            raise Exception(f"FFmpeg error: {result.stderr}")
-        
-        # Проверяем что файл создан
-        if not os.path.exists(wav_path):
-            raise Exception("Конвертированный файл не создан")
-        
-        # ВРЕМЕННЫЙ ОТВЕТ (потом заменим на Whisper)
-        text = "Голосовое сообщение успешно обработано! Распознавание текста скоро будет добавлено."
-        
-        # Получаем ответ
-        response = await self._get_deepseek_response(text)
-        await update.message.reply_text(f"🎤 {text}\n\n🤖 {response}")
+        print("✅ ГОЛОС: Обработка завершена успешно!")
         
     except Exception as e:
+        print(f"❌ ГОЛОС: Ошибка: {e}")
         logger.error(f"Ошибка обработки голосового сообщения: {e}")
         await update.message.reply_text("❌ Ошибка обработки голосового сообщения")
+
+# Настройка обработчиков
+print("🔧 Настраиваю обработчики...")
+application.add_handler(MessageHandler(filters.ALL, handle_all_messages))  # ← ПЕРВЫЙ!
+application.add_handler(CommandHandler("start", start_command))
+application.add_handler(CommandHandler("help", help_command))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+application.add_handler(MessageHandler(filters.VOICE, handle_voice))
+print("✅ Все обработчики настроены!")
+
+# Запуск бота
+if __name__ == "__main__":
+    print("🚀 DeepSeek Voice Assistant запускается...")
+    print("🤖 Бот активирован!")
     
-    finally:
-        # Удаляем временные файлы
-        for file_path in [oga_path, wav_path]:
-            if file_path and os.path.exists(file_path):
-                try:
-                    os.unlink(file_path)
-                except:
-                    pass
-    
-   async def _get_deepseek_response(self, message: str) -> str:
-    """Запрос к DeepSeek API с отладкой"""
-    url = url = "https://api.deepseek.com/v1/models"
-    
-    headers = {
-        "Authorization": f"Bearer {self.deepseek_api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    data = {
-        "model": self.model,
-        "messages": [
-            {"role": "user", "content": message}
-        ],
-        "stream": False
-    }
-    
+    # ПРОСТОЙ ТЕСТ: Проверим базовое подключение
+    print("🔍 Простой тест подключения...")
     try:
-        print(f"🔍 Отправка запроса к DeepSeek API...")
-        print(f"🔑 Ключ: {self.deepseek_api_key[:10]}...")  # Покажем только начало ключа
-        print(f"📝 Сообщение: {message}")
+        # Просто проверим что бот может сделать запрос
+        import requests
+        test_url = f"https://api.telegram.org/bot{TOKEN}/getMe"
+        response = requests.get(test_url, timeout=10)
+        print(f"✅ Telegram API доступен. Статус: {response.status_code}")
         
-        response = requests.post(url, json=data, headers=headers, timeout=30)
-        print(f"📡 Статус ответа: {response.status_code}")
-        
-        response.raise_for_status()
-        
-        result = response.json()
-        print(f"✅ Ответ получен успешно!")
-        return result['choices'][0]['message']['content']
-        
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Ошибка DeepSeek API: {e}")
-        print(f"❌ Ошибка запроса: {e}")
-        return "⚠️ Не удалось получить ответ от AI. Попробуйте позже."
+        if response.status_code == 200:
+            bot_info = response.json()
+            print(f"✅ Бот: {bot_info['result']['first_name']} (@{bot_info['result']['username']})")
+        else:
+            print(f"❌ Ошибка API: {response.status_code}")
+            
     except Exception as e:
-        logger.error(f"Неожиданная ошибка: {e}")
-        print(f"❌ Неожиданная ошибка: {e}")
-        return "⚠️ Произошла непредвиденная ошибка."
+        print(f"❌ Ошибка теста: {e}")
+    
+    print("🔍 Проверяем очередь сообщений...")
+    try:
+        # Простой синхронный запрос для проверки очереди
+        import requests
+        updates_url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+        response = requests.get(updates_url, timeout=10)
+        
+        if response.status_code == 200:
+            updates_data = response.json()
+            updates_count = len(updates_data['result'])
+            print(f"📡 Сообщений в очереди: {updates_count}")
+            
+            if updates_count > 0:
+                print("💡 В очереди есть сообщения! Отправь '/start' чтобы очистить.")
+                for update in updates_data['result']:
+                    print(f"   - Update {update['update_id']}")
+            else:
+                print("📭 Очередь сообщений пуста")
+        else:
+            print(f"❌ Ошибка получения updates: {response.status_code}")
+            
+    except Exception as e:
+        print(f"❌ Ошибка проверки очереди: {e}")
+    
+    print("🚀 Запускаю основной цикл...")
+    application.run_polling()
